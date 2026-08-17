@@ -32,7 +32,7 @@ Source: [`github.com/datasets/football-datasets`](https://github.com/datasets/fo
 
 ## Visualization
 
-Built in Tableau — two linked dashboards plus a story:
+Built in Tableau, two linked dashboards plus a story:
 
 1. **"The 30-Year Decline"** — home advantage trend across all 5 leagues, 1993–2025.
 2. **"Where Advantage Still Lives"** — league comparison, shot efficiency, team form, and the
