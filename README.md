@@ -2,7 +2,7 @@
 
 **Testing football's oldest cliché — is the crowd really an extra player?**
 
-A data visualization project for the Data Visualization course (תשפ״ו), analyzing home-field
+A data visualization project for the Data Visualization course , analyzing home-field
 advantage across Europe's "big 5" football leagues (Premier League, La Liga, Bundesliga, Serie A,
 Ligue 1) from 1993/94 to 2025/26 — and using COVID-19's fanless, behind-closed-doors matches as
 a natural experiment to test how much of that advantage actually comes from the crowd.
