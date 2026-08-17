@@ -4,13 +4,13 @@
 
 A data visualization project for the Data Visualization course , analyzing home-field
 advantage across Europe's "big 5" football leagues (Premier League, La Liga, Bundesliga, Serie A,
-Ligue 1) from 1993/94 to 2025/26 — and using COVID-19's fanless, behind-closed-doors matches as
+Ligue 1) from 1993/94 to 2025/26 and using COVID-19's fanless, behind-closed-doors matches as
 a natural experiment to test how much of that advantage actually comes from the crowd.
 
 ## The question
 
 Home-field advantage is one of the most consistent patterns in sports, but *why* it exists is
-debated — crowd pressure on referees, travel fatigue, pitch familiarity. COVID accidentally
+debated crowd pressure on referees, travel fatigue, pitch familiarity. COVID accidentally
 created a natural experiment: same teams, same competitions, same rules, just no fans. This
 project uses that experiment to test the "it's the crowd" theory directly, across five different
 football cultures.
