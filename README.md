@@ -1,4 +1,4 @@
-# The Twelfth Man
+# The Twelfth Man ⚽
 
 **Testing football's oldest cliché — is the crowd really an extra player?**
 
@@ -7,7 +7,7 @@ advantage across Europe's "big 5" football leagues (Premier League, La Liga, Bun
 Ligue 1) from 1993/94 to 2025/26 and using COVID-19's fanless, behind-closed-doors matches as
 a natural experiment to test how much of that advantage actually comes from the crowd.
 
-## The question
+## The question 🏟️
 
 Home-field advantage is one of the most consistent patterns in sports, but *why* it exists is
 debated ,crowd pressure on referees, travel fatigue, pitch familiarity. COVID accidentally
@@ -30,7 +30,7 @@ Source: [`github.com/datasets/football-datasets`](https://github.com/datasets/fo
 - `docs/` — build guide mapping processed data to Tableau worksheets/dashboards/story.
 - `report/` — final project report (submitted separately per course requirements).
 
-## Visualization
+## Visualization 🥅
 
 Built in Tableau, two linked dashboards plus a story:
 
@@ -42,6 +42,6 @@ Built in Tableau, two linked dashboards plus a story:
 
 **Live workbook:** _link to be added once published to Tableau Public_
 
-## Team
+## Team 🏆
 
 Yousef Shihade & Shada Essawi & Fidaa Arrabi — Data Visualization, final project.
