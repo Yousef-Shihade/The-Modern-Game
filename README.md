@@ -187,4 +187,4 @@ layer handles data preparation only.
 
 Yousef Shihade · Shada Essawi · Fidaa Arrabi
 
-Data Visualization — Final Project, תשפ״ו
+Data Visualization — Final Project
