@@ -44,4 +44,4 @@ Built in Tableau, two linked dashboards plus a story:
 
 ## Team 🏆
 
-Yousef Shihade & Shada Essawi & Fidaa Arrabi — Data Visualization, final project.
+Yousef Shihade & Shada Esawi & Fidaa Arrabi — Data Visualization, final project.
