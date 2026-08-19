@@ -47,25 +47,40 @@ size of the change varies considerably:
 > with the VAR era, not as proof that VAR alone caused the change — other rule and style changes
 > happened over the same period.
 
-## Charts
+## Exploring the data
 
-The preprocessing script renders a summary chart for each measure into [`plots/`](plots), so the
-findings can be reviewed straight from the repository. A few of them:
+Before designing the dashboards, the dataset had to be understood: what it actually contains,
+where it is incomplete, how the core variables behave, and which measures would survive those
+limits. The preprocessing script renders that exploration into [`plots/`](plots).
 
-**Draws are slowly disappearing, in every league**
+**These charts are not the project's findings** — the findings are presented in the Tableau
+dashboards and story. These document the reasoning that led to them.
 
-![Draw rate by season](plots/01_draw_rate_by_season.png)
+**What the data contains, and when**
 
-**Refereeing got stricter after VAR — everywhere, but by very different margins**
+Shot statistics only become available across all five leagues in 2005/06, and fouls arrive later
+still in Ligue 1. This chart is the reason detailed analysis is restricted to a common era, and
+why foul-based measures skip the seasons that lack fouls.
 
-![Cards per foul, pre vs post VAR](plots/04_cards_per_foul_pre_post_var.png)
+![Data coverage by league and season](plots/01_data_coverage.png)
 
-**And when the crowds disappeared, so did home advantage**
+**Where the data is missing**
 
-![Home advantage during COVID](plots/07_covid_home_advantage_drop.png)
+Results are complete for all 59,079 matches, but roughly a third lack shots, fouls and cards, and
+the referee's name is absent for four matches in five — which is why no headline finding rests on
+individual referees.
 
-The full set also covers goals per match, shot conversion, fouls per match, and the 30-year home
-advantage trend.
+![Missing values by field](plots/03_missing_values.png)
+
+**Why finishing is measured as goals per shot**
+
+Taking five times as many shots does not produce five times as many goals. Shot volume alone is a
+poor proxy for attacking quality, so the project measures conversion instead of counting shots.
+
+![Average goals by shot volume](plots/06_goals_by_shot_volume.png)
+
+Also in the folder: matches per season by league (league sizes and format changes), the
+distribution of goals per match, and the home win / draw / away win split per league.
 
 ## Data
 
@@ -191,8 +206,8 @@ the attacking or VAR findings.
 
 | File | Description |
 |---|---|
-| `football_preprocessing.py` | Preprocessing pipeline and chart generation — documented and reproducible |
-| `plots/` | Summary charts rendered by the script |
+| `football_preprocessing.py` | Preprocessing pipeline and data-exploration charts — documented and reproducible |
+| `plots/` | Data-exploration charts rendered by the script |
 | `README.md` | This file |
 
 The packaged Tableau workbook and the final written report are added on completion.
@@ -200,11 +215,11 @@ The packaged Tableau workbook and the final written report are added on completi
 ## Tools
 
 - **Data processing:** Python 3, pandas, NumPy, Google Colab
-- **Charts in this repository:** matplotlib
+- **Data-exploration charts in this repository:** matplotlib
 - **Project visualizations:** Tableau Desktop, Tableau Public
 
 No custom JavaScript/D3 code was used — all project visualizations are built in Tableau, and the
-Python layer handles data preparation and the summary charts above.
+Python layer handles data preparation and the exploration charts above.
 
 ## Team 🏆
 

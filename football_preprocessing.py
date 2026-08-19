@@ -38,7 +38,10 @@ Supplementary tables (produced for completeness and reproducibility):
 
 Also written:
     PROCESSING_LOG.txt           Full step-by-step log and data-quality summary
-    plots/*.png                  Summary charts for the measures above
+    plots/*.png                  Data-exploration charts: what the dataset contains,
+                                 where it is incomplete, and how the core variables
+                                 are distributed. The project's findings are presented
+                                 in the Tableau workbook, not here.
 
 Requirements
 ------------
@@ -585,11 +588,13 @@ def build_var_home_bias_footnote(detailed: pd.DataFrame) -> pd.DataFrame:
 
 
 # ---------------------------------------------------------------------------
-# Charts
+# Charts - exploring the data
 # ---------------------------------------------------------------------------
-# These figures summarise the same measures the Tableau dashboards present. They
-# are produced from the processed tables so that the findings can be reviewed
-# straight from the repository, without opening Tableau.
+# These figures document how the dataset was explored and understood before the
+# Tableau dashboards were designed: what the data actually contains, where it is
+# incomplete, how the core variables are distributed, and which relationships
+# justified the measures the dashboards ended up using. They deliberately do not
+# repeat the dashboards themselves - the findings live in Tableau.
 
 #: Chart surface and ink colours (light theme).
 CHART_SURFACE = "#fcfcfb"
@@ -599,19 +604,20 @@ INK_MUTED = "#898781"
 GRIDLINE = "#e1e0d9"
 AXIS_LINE = "#c3c2b7"
 
-#: Two-colour "before vs after" pair, used consistently: blue = before the
-#: change, orange = after it. No other categorical colours are introduced.
-COLOR_BEFORE = "#2a78d6"
-COLOR_AFTER = "#eb6834"
-
-#: Single series hue for the per-league trend panels, plus a recessive grey for
-#: the five-league average drawn behind each panel as context.
+#: Single hue used wherever one measure is shown on its own.
 COLOR_SERIES = "#2a78d6"
-COLOR_CONTEXT = "#c3c2b7"
 
-#: Neutral wash marking the COVID-affected seasons - deliberately not one of the
-#: series colours, so it reads as an annotation rather than as data.
-COLOR_COVID_BAND = "#e1e0d9"
+#: Categorical slots, in fixed order, for the few charts with several series.
+CATEGORICAL_COLORS: list[str] = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4"]
+
+#: Ordered three-step ramp for the data-coverage grid (light to dark = more
+#: complete). Steps are taken from one hue so the order reads as a progression.
+COVERAGE_COLORS: list[str] = ["#86b6ef", "#2a78d6", "#184f95"]
+COVERAGE_LABELS: list[str] = [
+    "Results only",
+    "+ shots",
+    "+ fouls and cards (full detail)",
+]
 
 #: Fixed league order, applied to every chart so panels and bars never reshuffle.
 LEAGUE_ORDER: list[str] = list(LEAGUES.values())
@@ -629,10 +635,11 @@ LEAGUE_SHORT_NAMES: dict[str, str] = {
 CHART_SOURCE_NOTE = "Source: football-datasets (football-data.co.uk)"
 
 
-def _style_axes(axes) -> None:
+def _style_axes(axes, grid_axis: str = "y") -> None:
     """Apply the shared chart styling: recessive grid, no top/right spines."""
     axes.set_facecolor(CHART_SURFACE)
-    axes.grid(True, axis="y", color=GRIDLINE, linewidth=0.8, zorder=0)
+    if grid_axis != "none":
+        axes.grid(True, axis=grid_axis, color=GRIDLINE, linewidth=0.8, zorder=0)
     axes.set_axisbelow(True)
     for side in ("top", "right"):
         axes.spines[side].set_visible(False)
@@ -654,171 +661,271 @@ def _finish_figure(figure, out_path: Path, title: str, subtitle: str) -> None:
     LOGGER.info("PLOT  %s", out_path.name)
 
 
-def plot_season_trend(
-    season_summary: pd.DataFrame,
-    value_column: str,
-    title: str,
-    subtitle: str,
-    y_label: str,
-    out_path: Path,
-    mark_covid: bool = False,
-) -> None:
-    """Small multiples: one panel per league, with the five-league mean behind it.
+def plot_data_coverage(matches: pd.DataFrame, out_path: Path) -> None:
+    """Which statistics each league reports, season by season.
 
-    One series per panel keeps identity in the panel title rather than in colour,
-    and avoids five overlapping lines competing on a single axis.
+    This is the chart behind the "detailed era" decision: shot data only becomes
+    available across all five leagues in 2005/06, and fouls arrive later still in
+    Ligue 1, which is why foul-based measures skip those seasons.
+    """
+    import matplotlib.pyplot as plt
+    from matplotlib.colors import BoundaryNorm, ListedColormap
+    from matplotlib.patches import Patch
+
+    per_season = (
+        matches.groupby(["League", "SeasonStartYear"])[
+            ["HasShotStats", "HasFoulStats", "HasCardStats"]
+        ].mean().reset_index()
+    )
+    # A family counts as "reported" when it is present for most of the season.
+    has_shots = per_season["HasShotStats"] > 0.5
+    has_fouls = per_season["HasFoulStats"] > 0.5
+    has_cards = per_season["HasCardStats"] > 0.5
+    per_season["Coverage"] = np.select(
+        [has_shots & has_fouls & has_cards, has_shots], [2, 1], default=0
+    )
+
+    grid = (
+        per_season.pivot(index="League", columns="SeasonStartYear", values="Coverage")
+        .reindex(LEAGUE_ORDER)
+    )
+
+    figure, axes = plt.subplots(figsize=(13, 4.2))
+    _style_axes(axes, grid_axis="none")
+
+    colormap = ListedColormap(COVERAGE_COLORS)
+    norm = BoundaryNorm([-0.5, 0.5, 1.5, 2.5], colormap.N)
+    axes.imshow(grid.values, aspect="auto", cmap=colormap, norm=norm,
+                extent=(grid.columns.min() - 0.5, grid.columns.max() + 0.5,
+                        len(grid) - 0.5, -0.5))
+
+    axes.set_yticks(range(len(grid)))
+    axes.set_yticklabels([LEAGUE_SHORT_NAMES[name] for name in grid.index],
+                         fontsize=10, color=INK_PRIMARY)
+    axes.set_xlabel("Season start year", fontsize=10, color=INK_SECONDARY)
+    axes.set_xticks(range(1995, 2026, 5))
+
+    axes.legend(
+        handles=[Patch(facecolor=color, label=label)
+                 for color, label in zip(COVERAGE_COLORS, COVERAGE_LABELS)],
+        loc="lower left", bbox_to_anchor=(0, 1.01), ncol=3,
+        frameon=False, fontsize=10, labelcolor=INK_SECONDARY,
+    )
+
+    figure.tight_layout(rect=(0, 0.04, 1, 0.86))
+    _finish_figure(
+        figure, out_path,
+        "What the data actually contains, season by season",
+        "Which statistics each league reports - the reason detailed analysis starts in 2005/06",
+    )
+    plt.close(figure)
+
+
+def plot_matches_per_season(matches: pd.DataFrame, out_path: Path) -> None:
+    """League size over time, measured in matches played per season.
+
+    Drawn as one panel per league rather than five lines on a shared axis: most
+    leagues play exactly 380 matches, so overlaid lines would hide each other.
     """
     import matplotlib.pyplot as plt
     from matplotlib.ticker import MaxNLocator
 
-    league_mean = season_summary.groupby("SeasonStartYear")[value_column].mean()
+    counts = (
+        matches.groupby(["League", "SeasonStartYear"]).size()
+        .reset_index(name="Matches")
+    )
 
-    figure, axes_grid = plt.subplots(2, 3, figsize=(13, 6.6), sharex=True, sharey=True)
+    figure, axes_grid = plt.subplots(2, 3, figsize=(13, 6.4), sharex=True, sharey=True)
     flat_axes = axes_grid.flatten()
 
     for axes, league in zip(flat_axes, LEAGUE_ORDER):
-        league_rows = (
-            season_summary[season_summary["League"] == league]
-            .sort_values("SeasonStartYear")
-        )
+        rows = counts[counts["League"] == league].sort_values("SeasonStartYear")
         _style_axes(axes)
-
-        if mark_covid:
-            axes.axvspan(2019, 2021, color=COLOR_COVID_BAND, zorder=1)
-
-        axes.plot(league_mean.index, league_mean.values, color=COLOR_CONTEXT,
-                  linewidth=2, zorder=2)
-        axes.plot(league_rows["SeasonStartYear"], league_rows[value_column],
+        axes.step(rows["SeasonStartYear"], rows["Matches"], where="post",
                   color=COLOR_SERIES, linewidth=2, zorder=3)
         axes.set_title(LEAGUE_SHORT_NAMES[league], fontsize=11,
                        color=INK_PRIMARY, loc="left", pad=8)
-        # Seasons are whole years - never label them 2007.5.
-        axes.xaxis.set_major_locator(MaxNLocator(integer=True, nbins=6))
+        axes.xaxis.set_major_locator(MaxNLocator(integer=True, nbins=5))
 
-    # The sixth cell carries the legend instead of a chart.
-    legend_axes = flat_axes[5]
-    legend_axes.axis("off")
-    legend_handles = [
-        plt.Line2D([], [], color=COLOR_SERIES, linewidth=2, label="This league"),
-        plt.Line2D([], [], color=COLOR_CONTEXT, linewidth=2, label="Five-league average"),
-    ]
-    if mark_covid:
-        legend_handles.append(
-            plt.Rectangle((0, 0), 1, 1, color=COLOR_COVID_BAND,
-                          label="COVID seasons (2019/20-2020/21)")
-        )
-    legend_axes.legend(handles=legend_handles, loc="center left", frameon=False,
-                       fontsize=10, labelcolor=INK_SECONDARY)
-
-    for axes in flat_axes[:5]:
-        axes.set_xlabel("")
-    for axes in (flat_axes[0], flat_axes[3]):
-        axes.set_ylabel(y_label, fontsize=10, color=INK_SECONDARY)
-
-    # The top-right panel has no chart beneath it, so shared-axis tick hiding
-    # would otherwise leave it without year labels.
+    flat_axes[5].axis("off")
     flat_axes[2].tick_params(labelbottom=True)
+    for axes in (flat_axes[0], flat_axes[3]):
+        axes.set_ylabel("Matches played", fontsize=10, color=INK_SECONDARY)
 
     figure.supxlabel("Season start year", fontsize=10, color=INK_SECONDARY, y=0.045)
     figure.tight_layout(rect=(0, 0.04, 1, 0.90))
-    _finish_figure(figure, out_path, title, subtitle)
-    plt.close(figure)
-
-
-def plot_pre_post_var(
-    var_effect: pd.DataFrame,
-    value_column: str,
-    title: str,
-    subtitle: str,
-    y_label: str,
-    value_format: str,
-    out_path: Path,
-) -> None:
-    """Grouped bars comparing each league before and after VAR was introduced."""
-    import matplotlib.pyplot as plt
-
-    pivot = (
-        var_effect.pivot(index="League", columns="Period", values=value_column)
-        .reindex(LEAGUE_ORDER)
-    )
-
-    positions = np.arange(len(pivot))
-    bar_width = 0.38
-    gap = 0.02  # keeps a visible surface gap between the paired bars
-
-    figure, axes = plt.subplots(figsize=(11, 5.6))
-    _style_axes(axes)
-
-    for offset, (period, color) in enumerate(
-        (("Pre-VAR", COLOR_BEFORE), ("Post-VAR", COLOR_AFTER))
-    ):
-        shift = (offset - 0.5) * (bar_width + gap)
-        bars = axes.bar(positions + shift, pivot[period], width=bar_width,
-                        color=color, label=period, zorder=3)
-        axes.bar_label(bars, fmt=value_format, padding=3, fontsize=9,
-                       color=INK_SECONDARY)
-
-    axes.set_xticks(positions)
-    axes.set_xticklabels([LEAGUE_SHORT_NAMES[name] for name in pivot.index],
-                         fontsize=10, color=INK_PRIMARY)
-    axes.set_ylabel(y_label, fontsize=10, color=INK_SECONDARY)
-    # Legend sits above the plot area so it can never collide with a bar label.
-    axes.legend(frameon=False, fontsize=10, labelcolor=INK_SECONDARY,
-                loc="lower left", bbox_to_anchor=(0, 1.01), ncol=2)
-
-    figure.tight_layout(rect=(0, 0.04, 1, 0.88))
-    _finish_figure(figure, out_path, title, subtitle)
-    plt.close(figure)
-
-
-def plot_covid_home_advantage(covid_comparison: pd.DataFrame, out_path: Path) -> None:
-    """Grouped bars: home advantage before COVID versus the closed-doors season."""
-    import matplotlib.pyplot as plt
-
-    ordered = covid_comparison.set_index("League").reindex(LEAGUE_ORDER)
-    positions = np.arange(len(ordered))
-    bar_width = 0.38
-    gap = 0.02
-
-    figure, axes = plt.subplots(figsize=(11, 5.6))
-    _style_axes(axes)
-
-    series = (
-        ("PreCovid_Avg_Gap", COLOR_BEFORE, "Before COVID (2017/18-2018/19 avg)"),
-        ("Covid_2020_21_Gap", COLOR_AFTER, "Closed doors (2020/21)"),
-    )
-    for offset, (column, color, label) in enumerate(series):
-        shift = (offset - 0.5) * (bar_width + gap)
-        bars = axes.bar(positions + shift, ordered[column], width=bar_width,
-                        color=color, label=label, zorder=3)
-        axes.bar_label(bars, fmt="%.1f", padding=3, fontsize=9, color=INK_SECONDARY)
-
-    axes.axhline(0, color=AXIS_LINE, linewidth=1, zorder=2)
-    axes.set_xticks(positions)
-    axes.set_xticklabels([LEAGUE_SHORT_NAMES[name] for name in ordered.index],
-                         fontsize=10, color=INK_PRIMARY)
-    axes.set_ylabel("Home advantage (home win % - away win %)",
-                    fontsize=10, color=INK_SECONDARY)
-    axes.legend(frameon=False, fontsize=10, labelcolor=INK_SECONDARY,
-                loc="lower left", bbox_to_anchor=(0, 1.01), ncol=2)
-
-    figure.tight_layout(rect=(0, 0.04, 1, 0.88))
     _finish_figure(
         figure, out_path,
-        "Home advantage collapsed when the crowds went away",
-        "Home win rate minus away win rate, per league, before COVID and during the closed-doors season",
+        "Not every league is the same size",
+        "Matches per season - the Bundesliga plays 18 teams, and several leagues changed format or lost fixtures along the way",
     )
     plt.close(figure)
 
 
-def build_charts(
-    season_summary: pd.DataFrame,
-    detailed: pd.DataFrame,
-    var_effect: pd.DataFrame,
-    covid_comparison: pd.DataFrame,
-    plots_dir: Path,
-) -> None:
-    """Render every figure into ``plots_dir``."""
+def plot_missing_values(matches: pd.DataFrame, out_path: Path) -> None:
+    """Share of matches with no value recorded, for the fields the project uses."""
+    import matplotlib.pyplot as plt
+
+    fields = {
+        "FTHG": "Goals (home)",
+        "FTAG": "Goals (away)",
+        "HS": "Shots (home)",
+        "HST": "Shots on target (home)",
+        "HY": "Yellow cards (home)",
+        "HF": "Fouls (home)",
+        "Referee": "Referee name",
+    }
+    missing = (
+        pd.Series({label: matches[column].isna().mean() * 100
+                   for column, label in fields.items()})
+        .sort_values()
+    )
+
+    figure, axes = plt.subplots(figsize=(10, 5.2))
+    _style_axes(axes, grid_axis="x")
+
+    bars = axes.barh(missing.index, missing.values, color=COLOR_SERIES,
+                     height=0.62, zorder=3)
+    axes.bar_label(bars, fmt="%.1f%%", padding=4, fontsize=9.5, color=INK_SECONDARY)
+
+    axes.set_xlabel("Share of matches with no value recorded (%)",
+                    fontsize=10, color=INK_SECONDARY)
+    axes.set_xlim(right=max(missing.values) * 1.18)
+    axes.tick_params(axis="y", labelsize=10)
+    for label in axes.get_yticklabels():
+        label.set_color(INK_PRIMARY)
+
+    figure.tight_layout(rect=(0, 0.04, 1, 0.90))
+    _finish_figure(
+        figure, out_path,
+        "Results are complete; the extra detail is not",
+        "Missing values across the full 59,079-match dataset, by field",
+    )
+    plt.close(figure)
+
+
+def plot_goals_distribution(matches: pd.DataFrame, out_path: Path) -> None:
+    """How many goals a single match typically produces."""
+    import matplotlib.pyplot as plt
+
+    counts = matches["TotalGoals"].value_counts(normalize=True).sort_index() * 100
+    counts = counts[counts.index <= 8]
+
+    figure, axes = plt.subplots(figsize=(10, 5.2))
+    _style_axes(axes)
+
+    bars = axes.bar(counts.index, counts.values, color=COLOR_SERIES,
+                    width=0.68, zorder=3)
+    axes.bar_label(bars, fmt="%.1f%%", padding=3, fontsize=9.5, color=INK_SECONDARY)
+
+    axes.set_xticks(list(counts.index))
+    axes.set_xticklabels([f"{int(value)}" for value in counts.index],
+                         fontsize=10, color=INK_PRIMARY)
+    axes.set_xlabel("Goals in the match (both teams)", fontsize=10, color=INK_SECONDARY)
+    axes.set_ylabel("Share of matches (%)", fontsize=10, color=INK_SECONDARY)
+    axes.set_ylim(top=max(counts.values) * 1.15)
+
+    figure.tight_layout(rect=(0, 0.04, 1, 0.90))
+    _finish_figure(
+        figure, out_path,
+        "Most matches produce two or three goals",
+        "Distribution of total goals per match across all five leagues, 1993/94-2025/26",
+    )
+    plt.close(figure)
+
+
+def plot_result_split(matches: pd.DataFrame, out_path: Path) -> None:
+    """The home win / draw / away win split that motivates the project's measures."""
+    import matplotlib.pyplot as plt
+
+    split = (
+        matches.groupby("League")[["HomeWin", "Draw", "AwayWin"]].mean()
+        .reindex(LEAGUE_ORDER) * 100
+    )
+
+    figure, axes = plt.subplots(figsize=(11, 5.0))
+    _style_axes(axes, grid_axis="none")
+
+    positions = np.arange(len(split))
+    left = np.zeros(len(split))
+    series = (
+        ("HomeWin", CATEGORICAL_COLORS[0], "Home win"),
+        ("Draw", CATEGORICAL_COLORS[1], "Draw"),
+        ("AwayWin", CATEGORICAL_COLORS[2], "Away win"),
+    )
+    for column, color, label in series:
+        values = split[column].values
+        axes.barh(positions, values, left=left, color=color, label=label,
+                  height=0.6, zorder=3)
+        for position, value, start in zip(positions, values, left):
+            axes.text(start + value / 2, position, f"{value:.1f}%",
+                      ha="center", va="center", fontsize=9.5, color="#ffffff")
+        left = left + values
+
+    axes.set_yticks(positions)
+    axes.set_yticklabels([LEAGUE_SHORT_NAMES[name] for name in split.index],
+                         fontsize=10, color=INK_PRIMARY)
+    axes.set_xlim(0, 100)
+    axes.set_xlabel("Share of matches (%)", fontsize=10, color=INK_SECONDARY)
+    axes.invert_yaxis()
+    axes.legend(loc="lower left", bbox_to_anchor=(0, 1.01), ncol=3,
+                frameon=False, fontsize=10, labelcolor=INK_SECONDARY)
+
+    figure.tight_layout(rect=(0, 0.04, 1, 0.87))
+    _finish_figure(
+        figure, out_path,
+        "Roughly one match in four ends level",
+        "Share of home wins, draws and away wins per league across the full period",
+    )
+    plt.close(figure)
+
+
+def plot_goals_by_shot_volume(detailed: pd.DataFrame, out_path: Path) -> None:
+    """Goals scored against shots taken, at team-match level.
+
+    Taking more shots does raise scoring, but far less than proportionally, which
+    is why the project measures finishing as goals per shot rather than counting
+    shots on their own.
+    """
+    import matplotlib.pyplot as plt
+
+    team_matches = pd.concat([
+        detailed[["HS", "FTHG"]].rename(columns={"HS": "Shots", "FTHG": "Goals"}),
+        detailed[["AS", "FTAG"]].rename(columns={"AS": "Shots", "FTAG": "Goals"}),
+    ], ignore_index=True).dropna()
+
+    bins = [0, 5, 10, 15, 20, 25, 100]
+    labels = ["0-4", "5-9", "10-14", "15-19", "20-24", "25+"]
+    team_matches["ShotBucket"] = pd.cut(
+        team_matches["Shots"], bins=bins, labels=labels, right=False
+    )
+    by_bucket = team_matches.groupby("ShotBucket", observed=True)["Goals"].mean()
+
+    figure, axes = plt.subplots(figsize=(10, 5.2))
+    _style_axes(axes)
+
+    bars = axes.bar(range(len(by_bucket)), by_bucket.values, color=COLOR_SERIES,
+                    width=0.64, zorder=3)
+    axes.bar_label(bars, fmt="%.2f", padding=3, fontsize=9.5, color=INK_SECONDARY)
+
+    axes.set_xticks(range(len(by_bucket)))
+    axes.set_xticklabels(by_bucket.index, fontsize=10, color=INK_PRIMARY)
+    axes.set_xlabel("Shots taken in the match by one team",
+                    fontsize=10, color=INK_SECONDARY)
+    axes.set_ylabel("Average goals scored", fontsize=10, color=INK_SECONDARY)
+    axes.set_ylim(top=max(by_bucket.values) * 1.18)
+
+    figure.tight_layout(rect=(0, 0.04, 1, 0.90))
+    _finish_figure(
+        figure, out_path,
+        "Five times the shots does not mean five times the goals",
+        "Average goals scored by shot volume, team by team (detailed era, 2005/06 onward)",
+    )
+    plt.close(figure)
+
+
+def build_charts(matches: pd.DataFrame, detailed: pd.DataFrame, plots_dir: Path) -> None:
+    """Render the data-exploration figures into ``plots_dir``."""
     import matplotlib
     matplotlib.use("Agg")  # file output only, no interactive window
     import matplotlib.pyplot as plt
@@ -826,66 +933,14 @@ def build_charts(
     plt.rcParams["font.family"] = ["Segoe UI", "DejaVu Sans", "sans-serif"]
 
     plots_dir.mkdir(parents=True, exist_ok=True)
-    LOGGER.info("STEP 5 - Rendering charts into %s", plots_dir.resolve())
+    LOGGER.info("STEP 5 - Rendering data-exploration charts into %s", plots_dir.resolve())
 
-    plot_season_trend(
-        season_summary, "DrawPct",
-        "Fewer matches end level than they used to",
-        "Share of matches drawn, by season and league (1993/94-2025/26)",
-        "Draws (% of matches)",
-        plots_dir / "01_draw_rate_by_season.png",
-    )
-    plot_season_trend(
-        season_summary, "AvgTotalGoals",
-        "Scoring has drifted upwards across all five leagues",
-        "Average goals per match, by season and league (1993/94-2025/26)",
-        "Goals per match",
-        plots_dir / "02_goals_per_match_by_season.png",
-    )
-
-    # Attacking efficiency: goals per shot, averaged across both sides.
-    conversion = detailed.copy()
-    conversion["ShotConversion"] = (
-        conversion[["HomeShotConversion", "AwayShotConversion"]].mean(axis=1)
-    )
-    conversion_by_season = (
-        conversion.groupby(["League", "SeasonStartYear"])["ShotConversion"]
-        .mean().reset_index()
-    )
-    plot_season_trend(
-        conversion_by_season, "ShotConversion",
-        "Teams are converting more of the chances they take",
-        "Goals scored per shot attempted, by season and league (detailed era, 2005/06 onward)",
-        "Goals per shot",
-        plots_dir / "03_shot_conversion_by_season.png",
-    )
-
-    plot_pre_post_var(
-        var_effect, "AvgCardsPerFoul",
-        "Every league books more strictly in the VAR era",
-        "Cards issued per foul committed, before and after each league's VAR introduction (2005/06 onward)",
-        "Cards per foul", "%.3f",
-        plots_dir / "04_cards_per_foul_pre_post_var.png",
-    )
-    plot_pre_post_var(
-        var_effect, "AvgFoulsPerMatch",
-        "Foul counts did not rise to explain it",
-        "Average fouls per match, before and after each league's VAR introduction (2005/06 onward)",
-        "Fouls per match", "%.1f",
-        plots_dir / "05_fouls_per_match_pre_post_var.png",
-    )
-
-    plot_season_trend(
-        season_summary, "HomeAdvantage_WinPctGap",
-        "Home advantage has been fading for three decades",
-        "Home win rate minus away win rate, by season and league (1993/94-2025/26)",
-        "Home advantage (pct. points)",
-        plots_dir / "06_home_advantage_by_season.png",
-        mark_covid=True,
-    )
-    plot_covid_home_advantage(
-        covid_comparison, plots_dir / "07_covid_home_advantage_drop.png"
-    )
+    plot_data_coverage(matches, plots_dir / "01_data_coverage.png")
+    plot_matches_per_season(matches, plots_dir / "02_matches_per_season.png")
+    plot_missing_values(matches, plots_dir / "03_missing_values.png")
+    plot_goals_distribution(matches, plots_dir / "04_goals_per_match_distribution.png")
+    plot_result_split(matches, plots_dir / "05_result_split_by_league.png")
+    plot_goals_by_shot_volume(detailed, plots_dir / "06_goals_by_shot_volume.png")
 
 
 # ---------------------------------------------------------------------------
@@ -1036,7 +1091,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.skip_plots:
         LOGGER.info("STEP 5 - Charts skipped (--skip-plots).")
     else:
-        build_charts(season_summary, detailed, var_effect, covid_comparison, args.plots_dir)
+        build_charts(matches, detailed, args.plots_dir)
 
     log_section("DATA QUALITY SUMMARY", build_data_quality_summary(matches, common_detail_start))
     log_section("KEY FINDINGS", report_key_findings(season_summary, var_effect))
