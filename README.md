@@ -1,4 +1,4 @@
-# The Twelfth Man
+# 30 Years of European Football
 
 **30 Years of European Football: More Goals, Fewer Draws — and What Changed in the VAR Era?**
 
