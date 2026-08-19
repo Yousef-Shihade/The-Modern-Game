@@ -1,4 +1,4 @@
-# The Twelfth Man ⚽
+# The Twelfth Player ⚽
 
 **Testing football's oldest cliché — is the crowd really an extra player?**
 
