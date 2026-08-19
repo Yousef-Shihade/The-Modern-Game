@@ -185,6 +185,6 @@ layer handles data preparation only.
 
 ## Team 🏆
 
-Yousef Shihade · Shada Essawi · Fidaa Arrabi
+Yousef Shihade · Shada Esawi · Fidaa Arrabi
 
 Data Visualization — Final Project
