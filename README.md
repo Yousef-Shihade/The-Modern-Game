@@ -136,9 +136,9 @@ as the central explanation for the VAR or attacking findings.
 
 ## Tableau Public
 
-- **Story / main project:** https://public.tableau.com/views/European_Football_30_Years_Project/Story1
-- **Additional published view:** https://public.tableau.com/shared/6NJ55Y5GN
-- **VAR dashboard:** https://public.tableau.com/views/Viz2VARDashBoard2/Dashboard3
+- **Dashboard 1 — 30 Years of Change: Goals & Draws:** https://public.tableau.com/views/Dashboard1-30YearsofChangeGoalsandDraws/DashB1-TheAttackingEvolution?:language=en-US&publish=yes&:sid=&:redirect=auth&:display_count=n&:origin=viz_share_link
+- **Dashboard 2 — Before vs. After VAR: Refereeing Patterns:** https://public.tableau.com/views/Dashboard2-Beforevs_AfterRefereeingPatterns/Dashboard3?:language=en-US&publish=yes&:sid=&:redirect=auth&:display_count=n&:origin=viz_share_link
+- **Story — How 30 Years Changed Football:** https://public.tableau.com/views/Story-How30YearsChangedFootball/Story1?:language=en-US&publish=yes&:sid=&:redirect=auth&:display_count=n&:origin=viz_share_link
 
 ## Tools
 
