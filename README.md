@@ -1,6 +1,6 @@
 # The Modern Game ⚽
 
-**Has European football become a more decisive game over 30 years — and how much of that shift can actually be explained, rather than just felt?**
+**More goals, fewer draws — and what changed in the VAR era? A 30-year look at European football.**
 
 A data visualization project for the Data Visualization course, analyzing 30 years of match
 data across Europe's "big 5" football leagues (Premier League, La Liga, Bundesliga, Serie A,
@@ -8,22 +8,20 @@ Ligue 1), 1993/94–2025/26 — 59,079 matches after cleaning, across 33 seasons
 
 ## The question 🥅
 
-"The game is more attacking now" and "VAR killed the game's spontaneity" are two claims heard
-constantly in football media — usually backed by feeling, not data. This project tests both
-against three decades of real match results. The core trend: is the draw rate falling and goals
-per match rising, consistently, across all 5 leagues? And rather than stopping at "the game
-changed," the project uses two natural experiments already sitting in the data to test *why*:
-VAR's staggered rollout by league (did officiating get measurably more consistent once it
-arrived?), and COVID-19's fanless matches (a supporting look at how home-field advantage moved
-over the same 30 years). Both are treated as evidence toward the main question, not separate
-headline findings.
+"The modern game is more attacking," "there are fewer draws than there used to be," "VAR
+changed refereeing" — all common claims in football media, usually backed by feeling and
+memory rather than data. This project tests them against three decades of real match results,
+focusing on two main aspects: how match outcomes and attacking play have shifted over time, and
+whether officiating patterns changed measurably after VAR's introduction. A complementary chapter
+in the Story also revisits how home-field advantage moved over the same period, including its
+sharpest single drop during COVID-19's fanless matches.
 
 ## Data
 
 Source: [`github.com/datasets/football-datasets`](https://github.com/datasets/football-datasets)
 (built from football-data.co.uk) — match-level results for all five leagues, 1993/94–2025/26.
-165 raw season files merged into one dataset; detailed shot/card statistics are available from
-the 2005/06 season onward league-wide.
+165 raw season files merged into one dataset; detailed shot/card statistics are available
+consistently across all 5 leagues from the 2005/06 season onward.
 
 ## Project structure
 
@@ -33,22 +31,26 @@ the 2005/06 season onward league-wide.
 - `data/processed/` — output CSVs used directly by the Tableau workbook, plus `PROCESSING_LOG.txt`
   documenting every preprocessing step and design decision.
 - `docs/` — build guide mapping processed data to Tableau worksheets, dashboards, and the story.
-- `report/` — final project report (submitted separately per course requirements).
+- `report/` — final project report, including Tableau screenshots (submitted separately per
+  course requirements).
 
 ## Visualization 🏟️
 
 Built in Tableau — two linked dashboards plus a story:
 
-1. **Dashboard A — "The Attacking Evolution"** (the headline): draw rate and goals per match,
-   season by season across all 33 seasons and 5 leagues — no smoothing into multi-year buckets,
-   so real in-period swings (like COVID's temporary dip) stay visible. A shot-efficiency
-   drill-down answers *why* goals are rising: more shots, better finishing, or both.
-2. **Dashboard B — "The VAR Effect"** (one explanatory mechanism): cards issued per foul
-   committed, before vs. after each league's real VAR introduction date, testing whether
-   technology is part of why officiating — and by extension the game — became more decisive.
-3. **Story — "How 30 Years Changed Football"**: ties the attacking trend to VAR as one
-   explanation, with a supporting chapter on the parallel decline of home-field advantage,
-   including its sharpest single drop during COVID's fanless matches.
+1. **Dashboard 1 — "30 Years of Change: Goals & Draws"**: draw rate and goals per match, season
+   by season across all 33 seasons and 5 leagues — no smoothing into multi-year buckets, so real
+   in-period swings stay visible. A supporting chart on attacking efficiency (goals per shot)
+   digs into *why* scoring is rising. Finding: draw rate fell from ~28.5% to ~25.4%, while goals
+   per match rose from ~2.62 to ~2.81, over the full period.
+2. **Dashboard 2 — "Before vs. After VAR: Refereeing Patterns"**: cards issued per foul
+   committed, compared before and after each league's real VAR introduction date (Bundesliga/
+   Serie A 2017/18, La Liga/Ligue 1 2018/19, Premier League 2019/20). Finding: all 5 leagues
+   show an increase, ranging from ~6% to ~45% depending on the league.
+3. **Story — "How 30 Years Changed European Football"**: six steps connecting both dashboards
+   — the big question, the goals/draws trend, what changed in attack, entering the VAR era —
+   then a complementary chapter on the decline of home-field advantage and its collapse during
+   COVID's fanless matches.
 
 **Live workbook:** _link to be added once published to Tableau Public_
 
