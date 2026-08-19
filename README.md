@@ -1,59 +1,190 @@
-# The Modern Game ⚽
+# 30 Years of European Football ⚽
 
-**More goals, fewer draws — and what changed in the VAR era? A 30-year look at European football.**
+**More goals, fewer draws — and what changed in the VAR era?**
 
-A data visualization project for the Data Visualization course, analyzing 30 years of match
-data across Europe's "big 5" football leagues (Premier League, La Liga, Bundesliga, Serie A,
-Ligue 1), 1993/94–2025/26 — 59,079 matches after cleaning, across 33 seasons.
+A data visualization final project for the Data Visualization course (תשפ״ו), analyzing how
+European football changed across the "big five" leagues — Premier League, La Liga, Bundesliga,
+Serie A and Ligue 1 — from 1993/94 to 2025/26.
 
-## The question 🥅
+Claims like *"the modern game is more attacking"*, *"there are fewer draws than there used to be"*
+and *"VAR changed refereeing"* are common in football media, but they usually rest on memory and
+impressions. This project tests them against **59,079 real matches across 33 seasons**.
 
-"The modern game is more attacking," "there are fewer draws than there used to be," "VAR
-changed refereeing" — all common claims in football media, usually backed by feeling and
-memory rather than data. This project tests them against three decades of real match results,
-focusing on two main aspects: how match outcomes and attacking play have shifted over time, and
-whether officiating patterns changed measurably after VAR's introduction. A complementary chapter
-in the Story also revisits how home-field advantage moved over the same period, including its
-sharpest single drop during COVID-19's fanless matches.
+## Research questions 🥅
+
+> **How has European football changed over the last three decades in terms of match outcomes,
+> attacking trends, and refereeing patterns in the VAR era?**
+
+Supporting questions:
+
+1. Has the draw rate declined over time across the five leagues?
+2. Has the average number of goals per match increased?
+3. Is the change in goals related to shot volume or to finishing efficiency?
+4. Did the cards-per-foul ratio change after VAR was introduced?
+5. Are the observed patterns consistent across leagues, or do they differ?
+6. *(Supporting)* How did home advantage change over the period, and what happened during the
+   COVID-19 season when many matches were played without crowds?
+
+## Key findings 📊
+
+| Measure | Early period (1993–99) | Recent period (2020–26) |
+|---|---|---|
+| Draw rate | 28.5% | 25.4% |
+| Goals per match | 2.63 | 2.82 |
+
+**Cards per foul, after VAR was introduced** — the ratio rose in *all five* leagues, though the
+size of the change varies considerably:
+
+| League | Change in cards per foul (Post-VAR) |
+|---|---|
+| La Liga | +6.0% |
+| Premier League | +15.6% |
+| Serie A | +20.2% |
+| Ligue 1 | +29.0% |
+| Bundesliga | +44.7% |
+
+> These are observational comparisons. A before/after difference is treated as an association
+> with the VAR era, not as proof that VAR alone caused the change — other rule and style changes
+> happened over the same period.
 
 ## Data
 
-Source: [`github.com/datasets/football-datasets`](https://github.com/datasets/football-datasets)
-(built from football-data.co.uk) — match-level results for all five leagues, 1993/94–2025/26.
-165 raw season files merged into one dataset; detailed shot/card statistics are available
-consistently across all 5 leagues from the 2005/06 season onward.
+**Source:** [`github.com/datasets/football-datasets`](https://github.com/datasets/football-datasets)
+(built from football-data.co.uk).
 
-## Project structure
+After merging and cleaning:
 
-- `notebook/` — Python/pandas preprocessing (Google Colab notebook): merges all 5 leagues,
-  cleans and type-casts the data, engineers attacking, disciplinary, and home-advantage metrics,
-  and produces the analysis-ready CSVs below.
-- `data/processed/` — output CSVs used directly by the Tableau workbook, plus `PROCESSING_LOG.txt`
-  documenting every preprocessing step and design decision.
-- `docs/` — build guide mapping processed data to Tableau worksheets, dashboards, and the story.
-- `report/` — final project report, including Tableau screenshots (submitted separately per
-  course requirements).
+- **59,079 matches** · **5 leagues** · **33 seasons** · **1993/94–2025/26**
+- Built from **165 raw season CSV files** (5 leagues × 33 seasons)
 
-## Visualization 🏟️
+The raw data contains match results for the whole period, plus detailed statistics (shots, shots
+on target, fouls, yellow/red cards) for later seasons. Because those detailed fields are missing
+in the earliest seasons, shot- and card-based analyses are restricted to the **common detailed
+era beginning 2005/06**, when all five leagues report match statistics.
 
-Built in Tableau — two linked dashboards plus a story:
+> **Known data caveat:** the statistic families do not all start together. Ligue 1 reports shots
+> from 2005/06 but no fouls before 2007/08, so foul-based measures simply skip those matches
+> rather than shortening the detailed era for every other league. This is logged explicitly by
+> the preprocessing script.
 
-1. **Dashboard 1 — "30 Years of Change: Goals & Draws"**: draw rate and goals per match, season
-   by season across all 33 seasons and 5 leagues — no smoothing into multi-year buckets, so real
-   in-period swings stay visible. A supporting chart on attacking efficiency (goals per shot)
-   digs into *why* scoring is rising. Finding: draw rate fell from ~28.5% to ~25.4%, while goals
-   per match rose from ~2.62 to ~2.81, over the full period.
-2. **Dashboard 2 — "Before vs. After VAR: Refereeing Patterns"**: cards issued per foul
-   committed, compared before and after each league's real VAR introduction date (Bundesliga/
-   Serie A 2017/18, La Liga/Ligue 1 2018/19, Premier League 2019/20). Finding: all 5 leagues
-   show an increase, ranging from ~6% to ~45% depending on the league.
-3. **Story — "How 30 Years Changed European Football"**: six steps connecting both dashboards
-   — the big question, the goals/draws trend, what changed in attack, entering the VAR era —
-   then a complementary chapter on the decline of home-field advantage and its collapse during
-   COVID's fanless matches.
+## Preprocessing
 
-**Live workbook:** _link to be added once published to Tableau Public_
+Data preparation is written in **Python 3 / pandas**. The pipeline:
+
+1. clones the public dataset repository (sparse checkout of the five league folders);
+2. merges all 165 season files, adding `League`, `Season` and `SeasonStartYear`;
+3. parses dates, coerces numeric columns and drops rows missing core result/team fields;
+4. engineers match-level features — `TotalGoals`, `GoalDiff_HomeMinusAway`, `HomeWin`/`AwayWin`/
+   `Draw` flags, and per-family availability flags for shots, fouls and cards;
+5. determines the common detailed era across all five leagues;
+6. computes shot accuracy (on target per shot) and shot conversion (goals per shot);
+7. aggregates to league-season level, including draw rate, goals per match and home advantage;
+8. labels every match `Pre-VAR` / `Post-VAR` using each league's real VAR introduction season;
+9. computes `CardsPerFoul = (yellow + red cards) / total fouls`;
+10. writes all analysis tables plus `PROCESSING_LOG.txt`.
+
+**Why cards per foul, and not raw card counts?** A raw count cannot distinguish *more cards
+because more fouls were committed* from *more cards for the same number of fouls*. Normalizing by
+fouls isolates the change in sanctioning intensity.
+
+**VAR introduction seasons** (external documented fact, not part of the dataset — used only to
+split the Pre/Post periods):
+
+| League | VAR introduced |
+|---|---|
+| Bundesliga | 2017/18 |
+| Serie A | 2017/18 |
+| La Liga | 2018/19 |
+| Ligue 1 | 2018/19 |
+| Premier League | 2019/20 |
+
+### Running the pipeline
+
+```bash
+pip install pandas numpy
+python football_preprocessing.py
+```
+
+The raw dataset is downloaded automatically on first run. Optional arguments:
+
+```bash
+python football_preprocessing.py --data-dir ./raw_data --out-dir ./processed_data
+```
+
+Outputs are written to `processed_data/`. Tables used directly by the Tableau workbook:
+
+| File | Used by |
+|---|---|
+| `season_league_summary.csv` | Dashboard 1 + story (draw rate, goals, home advantage) |
+| `match_level_detailed.csv` | Dashboard 1 (shot efficiency drill-down) |
+| `var_technology_effect.csv` | Dashboard 2 (cards per foul, pre vs post VAR) |
+| `covid_league_comparison.csv` | Story (home advantage without crowds) |
+| `var_home_bias_footnote.csv` | Story (secondary cross-check) |
+
+Supplementary tables are also produced for completeness: `match_level_full.csv`,
+`team_season_summary.csv`, `referee_summary.csv`, `attacking_evolution_summary.csv`.
+
+## Visualizations 🏟️
+
+Built in Tableau — **two dashboards plus a story**, using worksheets, filters, tooltips and
+linked filter/highlight actions between views.
+
+### Dashboard 1 — 30 Years of Change: Goals & Draws
+
+How match outcomes and attacking play changed over time. The main view plots draw rate and goals
+per match **season by season** across all 33 seasons — deliberately not grouped into multi-year
+buckets, so genuine season-to-season swings stay visible; a separate KPI summary handles the
+period comparison. A shot-efficiency drill-down then asks *why* scoring rose: more shots, or
+better finishing?
+
+*Interaction:* selecting a league filters the dashboard to that league; tooltips give exact values.
+
+### Dashboard 2 — Before vs. After VAR: Refereeing Patterns
+
+Whether refereeing patterns changed after VAR arrived. The main chart compares cards per foul
+Pre-VAR vs Post-VAR **for each league separately**, since VAR arrived in different seasons.
+Supporting views show fouls per match (to check the change is not simply more fouling) and a
+timeline of each league's VAR introduction.
+
+*Interaction:* selecting a league highlights it across the supporting views.
+
+### Story — How 30 Years Changed European Football
+
+Connects both dashboards into one narrative: the big question → the goals and draws trend → what
+changed in attack → entering the VAR era → home advantage as a supporting theme → the COVID
+season, when many matches were played without crowds.
+
+COVID is used as **supporting context for the home-advantage chapter**, not as an explanation for
+the attacking or VAR findings.
+
+### Live on Tableau Public
+
+- **Dashboard 1 — 30 Years of Change: Goals & Draws:**
+  https://public.tableau.com/views/Dashboard1-30YearsofChangeGoalsandDraws/DashB1-TheAttackingEvolution
+- **Dashboard 2 — Before vs. After VAR: Refereeing Patterns:**
+  https://public.tableau.com/views/Dashboard2-Beforevs_AfterRefereeingPatterns/Dashboard3
+- **Story — How 30 Years Changed Football:**
+  https://public.tableau.com/views/Story-How30YearsChangedFootball/Story1
+
+## Repository contents
+
+| File | Description |
+|---|---|
+| `football_preprocessing.py` | Preprocessing pipeline (runnable script, documented and reproducible) |
+| `FootballPreprocessing_colabFile.ipynb` | Google Colab notebook version of the same pipeline |
+| `How 30 Years Changed Football - full project.twbx` | Packaged Tableau workbook (dashboards + story) |
+| `README.md` | This file |
+
+## Tools
+
+- **Data processing:** Python 3, pandas, NumPy, Google Colab
+- **Visualization:** Tableau Desktop, Tableau Public
+
+No custom JavaScript/D3 code was used — all visualizations are built in Tableau, and the Python
+layer handles data preparation only.
 
 ## Team 🏆
 
-Yousef Shihade & Shada Esawi & Fidaa Arrabi — Data Visualization, final project.
+Yousef Shihade · Shada Essawi · Fidaa Arrabi
+
+Data Visualization — Final Project, תשפ״ו
