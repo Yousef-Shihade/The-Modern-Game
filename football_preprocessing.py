@@ -30,7 +30,7 @@ Tables consumed directly by the Tableau workbook:
     match_level_detailed.csv     Dashboard 1 (shot efficiency drill-down)
     var_technology_effect.csv    Dashboard 2 (cards per foul, pre vs post VAR)
     covid_league_comparison.csv  Story (home advantage during closed-doors season)
-    var_home_bias_footnote.csv   Story (secondary cross-check, see NOTE below)
+    var_home_bias_footnote.csv   Story (secondary cross-check: home/away card gap)
 
 Supplementary tables (produced for completeness and reproducibility):
     match_level_full.csv, team_season_summary.csv, referee_summary.csv,
@@ -565,10 +565,8 @@ def build_var_technology_effect(detailed: pd.DataFrame) -> pd.DataFrame:
 def build_var_home_bias_footnote(detailed: pd.DataFrame) -> pd.DataFrame:
     """Average home/away card gap before and after VAR, per league.
 
-    NOTE: secondary cross-check only. This metric follows the same construction
-    another group in the course used for their crowd/COVID analysis; it is applied
-    here to a different intervention (VAR) and must be presented as a disclosed
-    footnote, never as an independent headline finding.
+    Secondary cross-check only: this sits alongside the main cards-per-foul
+    measure as a supporting footnote in the story, not as a headline finding.
     """
     bias = _add_var_period(detailed)
     bias["AwayCardGap"] = (bias["AY"] + bias["AR"]) - (bias["HY"] + bias["HR"])
