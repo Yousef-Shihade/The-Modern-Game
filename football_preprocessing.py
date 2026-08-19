@@ -38,6 +38,11 @@ Supplementary tables (produced for completeness and reproducibility):
 
 Also written:
     PROCESSING_LOG.txt           Full step-by-step log and data-quality summary
+    plots/*.png                  Summary charts for the measures above
+
+Requirements
+------------
+    pip install pandas numpy matplotlib
 """
 
 from __future__ import annotations
@@ -580,6 +585,310 @@ def build_var_home_bias_footnote(detailed: pd.DataFrame) -> pd.DataFrame:
 
 
 # ---------------------------------------------------------------------------
+# Charts
+# ---------------------------------------------------------------------------
+# These figures summarise the same measures the Tableau dashboards present. They
+# are produced from the processed tables so that the findings can be reviewed
+# straight from the repository, without opening Tableau.
+
+#: Chart surface and ink colours (light theme).
+CHART_SURFACE = "#fcfcfb"
+INK_PRIMARY = "#0b0b0b"
+INK_SECONDARY = "#52514e"
+INK_MUTED = "#898781"
+GRIDLINE = "#e1e0d9"
+AXIS_LINE = "#c3c2b7"
+
+#: Two-colour "before vs after" pair, used consistently: blue = before the
+#: change, orange = after it. No other categorical colours are introduced.
+COLOR_BEFORE = "#2a78d6"
+COLOR_AFTER = "#eb6834"
+
+#: Single series hue for the per-league trend panels, plus a recessive grey for
+#: the five-league average drawn behind each panel as context.
+COLOR_SERIES = "#2a78d6"
+COLOR_CONTEXT = "#c3c2b7"
+
+#: Neutral wash marking the COVID-affected seasons - deliberately not one of the
+#: series colours, so it reads as an annotation rather than as data.
+COLOR_COVID_BAND = "#e1e0d9"
+
+#: Fixed league order, applied to every chart so panels and bars never reshuffle.
+LEAGUE_ORDER: list[str] = list(LEAGUES.values())
+
+#: Shorter labels for axis ticks and panel titles.
+LEAGUE_SHORT_NAMES: dict[str, str] = {
+    "Premier League (England)": "Premier League",
+    "La Liga (Spain)": "La Liga",
+    "Bundesliga (Germany)": "Bundesliga",
+    "Serie A (Italy)": "Serie A",
+    "Ligue 1 (France)": "Ligue 1",
+}
+
+#: Each chart states its own period in the subtitle, so the note names the source only.
+CHART_SOURCE_NOTE = "Source: football-datasets (football-data.co.uk)"
+
+
+def _style_axes(axes) -> None:
+    """Apply the shared chart styling: recessive grid, no top/right spines."""
+    axes.set_facecolor(CHART_SURFACE)
+    axes.grid(True, axis="y", color=GRIDLINE, linewidth=0.8, zorder=0)
+    axes.set_axisbelow(True)
+    for side in ("top", "right"):
+        axes.spines[side].set_visible(False)
+    for side in ("left", "bottom"):
+        axes.spines[side].set_color(AXIS_LINE)
+        axes.spines[side].set_linewidth(0.8)
+    axes.tick_params(colors=INK_MUTED, labelsize=9, length=0)
+
+
+def _finish_figure(figure, out_path: Path, title: str, subtitle: str) -> None:
+    """Add the title block and source note, then write the PNG."""
+    figure.suptitle(title, x=0.01, y=0.985, ha="left", va="top",
+                    fontsize=15, color=INK_PRIMARY, weight="bold")
+    figure.text(0.01, 0.935, subtitle, ha="left", va="top",
+                fontsize=10.5, color=INK_SECONDARY)
+    figure.text(0.01, 0.01, CHART_SOURCE_NOTE, ha="left", fontsize=8.5, color=INK_MUTED)
+    figure.patch.set_facecolor(CHART_SURFACE)
+    figure.savefig(out_path, dpi=200, facecolor=CHART_SURFACE)
+    LOGGER.info("PLOT  %s", out_path.name)
+
+
+def plot_season_trend(
+    season_summary: pd.DataFrame,
+    value_column: str,
+    title: str,
+    subtitle: str,
+    y_label: str,
+    out_path: Path,
+    mark_covid: bool = False,
+) -> None:
+    """Small multiples: one panel per league, with the five-league mean behind it.
+
+    One series per panel keeps identity in the panel title rather than in colour,
+    and avoids five overlapping lines competing on a single axis.
+    """
+    import matplotlib.pyplot as plt
+    from matplotlib.ticker import MaxNLocator
+
+    league_mean = season_summary.groupby("SeasonStartYear")[value_column].mean()
+
+    figure, axes_grid = plt.subplots(2, 3, figsize=(13, 6.6), sharex=True, sharey=True)
+    flat_axes = axes_grid.flatten()
+
+    for axes, league in zip(flat_axes, LEAGUE_ORDER):
+        league_rows = (
+            season_summary[season_summary["League"] == league]
+            .sort_values("SeasonStartYear")
+        )
+        _style_axes(axes)
+
+        if mark_covid:
+            axes.axvspan(2019, 2021, color=COLOR_COVID_BAND, zorder=1)
+
+        axes.plot(league_mean.index, league_mean.values, color=COLOR_CONTEXT,
+                  linewidth=2, zorder=2)
+        axes.plot(league_rows["SeasonStartYear"], league_rows[value_column],
+                  color=COLOR_SERIES, linewidth=2, zorder=3)
+        axes.set_title(LEAGUE_SHORT_NAMES[league], fontsize=11,
+                       color=INK_PRIMARY, loc="left", pad=8)
+        # Seasons are whole years - never label them 2007.5.
+        axes.xaxis.set_major_locator(MaxNLocator(integer=True, nbins=6))
+
+    # The sixth cell carries the legend instead of a chart.
+    legend_axes = flat_axes[5]
+    legend_axes.axis("off")
+    legend_handles = [
+        plt.Line2D([], [], color=COLOR_SERIES, linewidth=2, label="This league"),
+        plt.Line2D([], [], color=COLOR_CONTEXT, linewidth=2, label="Five-league average"),
+    ]
+    if mark_covid:
+        legend_handles.append(
+            plt.Rectangle((0, 0), 1, 1, color=COLOR_COVID_BAND,
+                          label="COVID seasons (2019/20-2020/21)")
+        )
+    legend_axes.legend(handles=legend_handles, loc="center left", frameon=False,
+                       fontsize=10, labelcolor=INK_SECONDARY)
+
+    for axes in flat_axes[:5]:
+        axes.set_xlabel("")
+    for axes in (flat_axes[0], flat_axes[3]):
+        axes.set_ylabel(y_label, fontsize=10, color=INK_SECONDARY)
+
+    # The top-right panel has no chart beneath it, so shared-axis tick hiding
+    # would otherwise leave it without year labels.
+    flat_axes[2].tick_params(labelbottom=True)
+
+    figure.supxlabel("Season start year", fontsize=10, color=INK_SECONDARY, y=0.045)
+    figure.tight_layout(rect=(0, 0.04, 1, 0.90))
+    _finish_figure(figure, out_path, title, subtitle)
+    plt.close(figure)
+
+
+def plot_pre_post_var(
+    var_effect: pd.DataFrame,
+    value_column: str,
+    title: str,
+    subtitle: str,
+    y_label: str,
+    value_format: str,
+    out_path: Path,
+) -> None:
+    """Grouped bars comparing each league before and after VAR was introduced."""
+    import matplotlib.pyplot as plt
+
+    pivot = (
+        var_effect.pivot(index="League", columns="Period", values=value_column)
+        .reindex(LEAGUE_ORDER)
+    )
+
+    positions = np.arange(len(pivot))
+    bar_width = 0.38
+    gap = 0.02  # keeps a visible surface gap between the paired bars
+
+    figure, axes = plt.subplots(figsize=(11, 5.6))
+    _style_axes(axes)
+
+    for offset, (period, color) in enumerate(
+        (("Pre-VAR", COLOR_BEFORE), ("Post-VAR", COLOR_AFTER))
+    ):
+        shift = (offset - 0.5) * (bar_width + gap)
+        bars = axes.bar(positions + shift, pivot[period], width=bar_width,
+                        color=color, label=period, zorder=3)
+        axes.bar_label(bars, fmt=value_format, padding=3, fontsize=9,
+                       color=INK_SECONDARY)
+
+    axes.set_xticks(positions)
+    axes.set_xticklabels([LEAGUE_SHORT_NAMES[name] for name in pivot.index],
+                         fontsize=10, color=INK_PRIMARY)
+    axes.set_ylabel(y_label, fontsize=10, color=INK_SECONDARY)
+    # Legend sits above the plot area so it can never collide with a bar label.
+    axes.legend(frameon=False, fontsize=10, labelcolor=INK_SECONDARY,
+                loc="lower left", bbox_to_anchor=(0, 1.01), ncol=2)
+
+    figure.tight_layout(rect=(0, 0.04, 1, 0.88))
+    _finish_figure(figure, out_path, title, subtitle)
+    plt.close(figure)
+
+
+def plot_covid_home_advantage(covid_comparison: pd.DataFrame, out_path: Path) -> None:
+    """Grouped bars: home advantage before COVID versus the closed-doors season."""
+    import matplotlib.pyplot as plt
+
+    ordered = covid_comparison.set_index("League").reindex(LEAGUE_ORDER)
+    positions = np.arange(len(ordered))
+    bar_width = 0.38
+    gap = 0.02
+
+    figure, axes = plt.subplots(figsize=(11, 5.6))
+    _style_axes(axes)
+
+    series = (
+        ("PreCovid_Avg_Gap", COLOR_BEFORE, "Before COVID (2017/18-2018/19 avg)"),
+        ("Covid_2020_21_Gap", COLOR_AFTER, "Closed doors (2020/21)"),
+    )
+    for offset, (column, color, label) in enumerate(series):
+        shift = (offset - 0.5) * (bar_width + gap)
+        bars = axes.bar(positions + shift, ordered[column], width=bar_width,
+                        color=color, label=label, zorder=3)
+        axes.bar_label(bars, fmt="%.1f", padding=3, fontsize=9, color=INK_SECONDARY)
+
+    axes.axhline(0, color=AXIS_LINE, linewidth=1, zorder=2)
+    axes.set_xticks(positions)
+    axes.set_xticklabels([LEAGUE_SHORT_NAMES[name] for name in ordered.index],
+                         fontsize=10, color=INK_PRIMARY)
+    axes.set_ylabel("Home advantage (home win % - away win %)",
+                    fontsize=10, color=INK_SECONDARY)
+    axes.legend(frameon=False, fontsize=10, labelcolor=INK_SECONDARY,
+                loc="lower left", bbox_to_anchor=(0, 1.01), ncol=2)
+
+    figure.tight_layout(rect=(0, 0.04, 1, 0.88))
+    _finish_figure(
+        figure, out_path,
+        "Home advantage collapsed when the crowds went away",
+        "Home win rate minus away win rate, per league, before COVID and during the closed-doors season",
+    )
+    plt.close(figure)
+
+
+def build_charts(
+    season_summary: pd.DataFrame,
+    detailed: pd.DataFrame,
+    var_effect: pd.DataFrame,
+    covid_comparison: pd.DataFrame,
+    plots_dir: Path,
+) -> None:
+    """Render every figure into ``plots_dir``."""
+    import matplotlib
+    matplotlib.use("Agg")  # file output only, no interactive window
+    import matplotlib.pyplot as plt
+
+    plt.rcParams["font.family"] = ["Segoe UI", "DejaVu Sans", "sans-serif"]
+
+    plots_dir.mkdir(parents=True, exist_ok=True)
+    LOGGER.info("STEP 5 - Rendering charts into %s", plots_dir.resolve())
+
+    plot_season_trend(
+        season_summary, "DrawPct",
+        "Fewer matches end level than they used to",
+        "Share of matches drawn, by season and league (1993/94-2025/26)",
+        "Draws (% of matches)",
+        plots_dir / "01_draw_rate_by_season.png",
+    )
+    plot_season_trend(
+        season_summary, "AvgTotalGoals",
+        "Scoring has drifted upwards across all five leagues",
+        "Average goals per match, by season and league (1993/94-2025/26)",
+        "Goals per match",
+        plots_dir / "02_goals_per_match_by_season.png",
+    )
+
+    # Attacking efficiency: goals per shot, averaged across both sides.
+    conversion = detailed.copy()
+    conversion["ShotConversion"] = (
+        conversion[["HomeShotConversion", "AwayShotConversion"]].mean(axis=1)
+    )
+    conversion_by_season = (
+        conversion.groupby(["League", "SeasonStartYear"])["ShotConversion"]
+        .mean().reset_index()
+    )
+    plot_season_trend(
+        conversion_by_season, "ShotConversion",
+        "Teams are converting more of the chances they take",
+        "Goals scored per shot attempted, by season and league (detailed era, 2005/06 onward)",
+        "Goals per shot",
+        plots_dir / "03_shot_conversion_by_season.png",
+    )
+
+    plot_pre_post_var(
+        var_effect, "AvgCardsPerFoul",
+        "Every league books more strictly in the VAR era",
+        "Cards issued per foul committed, before and after each league's VAR introduction (2005/06 onward)",
+        "Cards per foul", "%.3f",
+        plots_dir / "04_cards_per_foul_pre_post_var.png",
+    )
+    plot_pre_post_var(
+        var_effect, "AvgFoulsPerMatch",
+        "Foul counts did not rise to explain it",
+        "Average fouls per match, before and after each league's VAR introduction (2005/06 onward)",
+        "Fouls per match", "%.1f",
+        plots_dir / "05_fouls_per_match_pre_post_var.png",
+    )
+
+    plot_season_trend(
+        season_summary, "HomeAdvantage_WinPctGap",
+        "Home advantage has been fading for three decades",
+        "Home win rate minus away win rate, by season and league (1993/94-2025/26)",
+        "Home advantage (pct. points)",
+        plots_dir / "06_home_advantage_by_season.png",
+        mark_covid=True,
+    )
+    plot_covid_home_advantage(
+        covid_comparison, plots_dir / "07_covid_home_advantage_drop.png"
+    )
+
+
+# ---------------------------------------------------------------------------
 # Reporting
 # ---------------------------------------------------------------------------
 
@@ -671,6 +980,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--out-dir", type=Path, default=Path("processed_data"),
         help="Directory to write the processed CSV files and the processing log into.",
     )
+    parser.add_argument(
+        "--plots-dir", type=Path, default=Path("plots"),
+        help="Directory to write the summary charts into.",
+    )
+    parser.add_argument(
+        "--skip-plots", action="store_true",
+        help="Build the data tables only, without rendering the charts.",
+    )
     return parser.parse_args(argv)
 
 
@@ -688,6 +1005,7 @@ def main(argv: list[str] | None = None) -> int:
     season_summary = build_season_league_summary(matches)
     detailed = build_detailed_matches(matches, common_detail_start)
     var_effect = build_var_technology_effect(detailed)
+    covid_comparison = build_covid_league_comparison(season_summary)
 
     LOGGER.info("STEP 4 - Writing analysis tables to %s", args.out_dir.resolve())
 
@@ -698,7 +1016,7 @@ def main(argv: list[str] | None = None) -> int:
                "Dashboard 1: shot efficiency drill-down")
     save_table(var_effect, args.out_dir, "var_technology_effect.csv",
                "Dashboard 2: cards per foul, pre vs post VAR")
-    save_table(build_covid_league_comparison(season_summary), args.out_dir,
+    save_table(covid_comparison, args.out_dir,
                "covid_league_comparison.csv", "Story: home advantage without crowds")
     save_table(build_var_home_bias_footnote(detailed), args.out_dir,
                "var_home_bias_footnote.csv", "Story: secondary cross-check (see docstring)")
@@ -714,6 +1032,11 @@ def main(argv: list[str] | None = None) -> int:
                "attacking_evolution_summary.csv", "Supplementary: draw rate and goals per era")
 
     LOGGER.info("NOTE - COVID-affected seasons (crowd restrictions): %s", ", ".join(COVID_SEASONS))
+
+    if args.skip_plots:
+        LOGGER.info("STEP 5 - Charts skipped (--skip-plots).")
+    else:
+        build_charts(season_summary, detailed, var_effect, covid_comparison, args.plots_dir)
 
     log_section("DATA QUALITY SUMMARY", build_data_quality_summary(matches, common_detail_start))
     log_section("KEY FINDINGS", report_key_findings(season_summary, var_effect))

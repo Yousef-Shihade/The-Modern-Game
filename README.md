@@ -47,6 +47,26 @@ size of the change varies considerably:
 > with the VAR era, not as proof that VAR alone caused the change — other rule and style changes
 > happened over the same period.
 
+## Charts
+
+The preprocessing script renders a summary chart for each measure into [`plots/`](plots), so the
+findings can be reviewed straight from the repository. A few of them:
+
+**Draws are slowly disappearing, in every league**
+
+![Draw rate by season](plots/01_draw_rate_by_season.png)
+
+**Refereeing got stricter after VAR — everywhere, but by very different margins**
+
+![Cards per foul, pre vs post VAR](plots/04_cards_per_foul_pre_post_var.png)
+
+**And when the crowds disappeared, so did home advantage**
+
+![Home advantage during COVID](plots/07_covid_home_advantage_drop.png)
+
+The full set also covers goals per match, shot conversion, fouls per match, and the 30-year home
+advantage trend.
+
 ## Data
 
 **Source:** [`github.com/datasets/football-datasets`](https://github.com/datasets/football-datasets)
@@ -81,7 +101,7 @@ Data preparation is written in **Python 3 / pandas**. The pipeline:
 7. aggregates to league-season level, including draw rate, goals per match and home advantage;
 8. labels every match `Pre-VAR` / `Post-VAR` using each league's real VAR introduction season;
 9. computes `CardsPerFoul = (yellow + red cards) / total fouls`;
-10. writes all analysis tables plus `PROCESSING_LOG.txt`.
+10. writes all analysis tables, the summary charts, and `PROCESSING_LOG.txt`.
 
 **Why cards per foul, and not raw card counts?** A raw count cannot distinguish *more cards
 because more fouls were committed* from *more cards for the same number of fouls*. Normalizing by
@@ -101,17 +121,18 @@ split the Pre/Post periods):
 ### Running the pipeline
 
 ```bash
-pip install pandas numpy
+pip install pandas numpy matplotlib
 python football_preprocessing.py
 ```
 
 The raw dataset is downloaded automatically on first run. Optional arguments:
 
 ```bash
-python football_preprocessing.py --data-dir ./raw_data --out-dir ./processed_data
+python football_preprocessing.py --data-dir ./raw_data --out-dir ./processed_data --plots-dir ./plots
+python football_preprocessing.py --skip-plots      # data tables only
 ```
 
-Outputs are written to `processed_data/`. Tables used directly by the Tableau workbook:
+Data tables are written to `processed_data/`. Tables used directly by the Tableau workbook:
 
 | File | Used by |
 |---|---|
@@ -170,21 +191,23 @@ the attacking or VAR findings.
 
 | File | Description |
 |---|---|
-| `football_preprocessing.py` | Preprocessing pipeline (runnable script, documented and reproducible) |
-| `FootballPreprocessing_colabFile.ipynb` | Google Colab notebook version of the same pipeline |
-| `How 30 Years Changed Football - full project.twbx` | Packaged Tableau workbook (dashboards + story) |
+| `football_preprocessing.py` | Preprocessing pipeline and chart generation — documented and reproducible |
+| `plots/` | Summary charts rendered by the script |
 | `README.md` | This file |
+
+The packaged Tableau workbook and the final written report are added on completion.
 
 ## Tools
 
 - **Data processing:** Python 3, pandas, NumPy, Google Colab
-- **Visualization:** Tableau Desktop, Tableau Public
+- **Charts in this repository:** matplotlib
+- **Project visualizations:** Tableau Desktop, Tableau Public
 
-No custom JavaScript/D3 code was used — all visualizations are built in Tableau, and the Python
-layer handles data preparation only.
+No custom JavaScript/D3 code was used — all project visualizations are built in Tableau, and the
+Python layer handles data preparation and the summary charts above.
 
 ## Team 🏆
 
-Yousef Shihade · Shada Esawi · Fidaa Arrabi
+Yousef Shihade · Shada Essawi · Fidaa Arrabi
 
-Data Visualization — Final Project
+Data Visualization — Final Project, תשפ״ו
