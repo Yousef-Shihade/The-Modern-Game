@@ -1,0 +1,47 @@
+DATA PREPROCESSING LOG
+==============================================================================
+
+STEP 0 - Using existing raw data at C:\fbrun\raw_data\datasets
+STEP 1 - Merged 165 season files: 59,079 matches across 5 leagues and 33 seasons (1993-2026).
+STEP 2 - Parsed Date column. Unparseable dates: 0
+STEP 2 - Dropped 0 row(s) missing core result/team fields. Remaining: 59,079
+STEP 3 - Engineered match-level fields. Matches with shot statistics: 40,211 / 59,079 (68.1%).
+STEP 3 - First season with shot statistics per league: {'Bundesliga (Germany)': 2000, 'La Liga (Spain)': 2005, 'Ligue 1 (France)': 2005, 'Premier League (England)': 2000, 'Serie A (Italy)': 2005}
+STEP 3 - Common detailed era across all five leagues starts in 2005/06.
+STEP 3 - First season with foul statistics per league: {'Bundesliga (Germany)': 2000, 'La Liga (Spain)': 2005, 'Ligue 1 (France)': 2007, 'Premier League (England)': 2000, 'Serie A (Italy)': 2005}
+STEP 4 - Writing analysis tables to C:\fbrun\processed_data
+SAVED season_league_summary.csv           165 rows x 15 cols  - Dashboard 1 + story: draw rate, goals, home advantage
+SAVED match_level_detailed.csv         37,699 rows x 26 cols  - Dashboard 1: shot efficiency drill-down
+SAVED var_technology_effect.csv            10 rows x  7 cols  - Dashboard 2: cards per foul, pre vs post VAR
+SAVED covid_league_comparison.csv           5 rows x  5 cols  - Story: home advantage without crowds
+SAVED var_home_bias_footnote.csv           10 rows x  3 cols  - Story: secondary cross-check (see docstring)
+SAVED match_level_full.csv             59,079 rows x 34 cols  - Supplementary: cleaned match-level data, full range
+SAVED team_season_summary.csv           2,034 rows x 17 cols  - Supplementary: per-team season averages
+SAVED referee_summary.csv                  51 rows x  6 cols  - Supplementary: per-referee discipline averages
+SAVED attacking_evolution_summary.csv      30 rows x  5 cols  - Supplementary: draw rate and goals per era
+NOTE - COVID-affected seasons (crowd restrictions): 2019/20, 2020/21
+STEP 5 - Charts skipped (--skip-plots).
+
+==============================================================================
+DATA QUALITY SUMMARY
+==============================================================================
+  Total matches after cleaning: 59,079
+  Date range: 1993-07-23 to 2026-05-24
+  Leagues: Premier League (England), La Liga (Spain), Bundesliga (Germany), Serie A (Italy), Ligue 1 (France)
+  Seasons per league: {'Bundesliga (Germany)': 33, 'La Liga (Spain)': 33, 'Ligue 1 (France)': 33, 'Premier League (England)': 33, 'Serie A (Italy)': 33}
+  Missing Referee field: 47,828 rows (81.0%)
+  Missing shot statistics (HS): 17,950 rows (30.4%)
+  Common detailed era starts: 2005/06
+
+==============================================================================
+KEY FINDINGS
+==============================================================================
+  Draw rate: 28.5% (1993-99) -> 25.4% (2020-26)
+  Goals per match: 2.63 (1993-99) -> 2.82 (2020-26)
+  Cards per foul, La Liga (Spain): +6.0% Post-VAR
+  Cards per foul, Premier League (England): +15.6% Post-VAR
+  Cards per foul, Serie A (Italy): +20.2% Post-VAR
+  Cards per foul, Ligue 1 (France): +29.0% Post-VAR
+  Cards per foul, Bundesliga (Germany): +44.7% Post-VAR
+
+Done. Processed data and PROCESSING_LOG.txt written to C:\fbrun\processed_data

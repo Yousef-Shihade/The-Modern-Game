@@ -1,0 +1,11 @@
+League,Period,Matches,AvgCardsPerFoul,AvgCardsPerMatch,AvgFoulsPerMatch,VARIntroYear
+Bundesliga (Germany),Post-VAR,2753,0.1702,3.916,23.252,2017
+Bundesliga (Germany),Pre-VAR,3366,0.1176,3.795,32.604,2017
+La Liga (Spain),Post-VAR,3040,0.195,5.064,26.138,2018
+La Liga (Spain),Pre-VAR,4940,0.1839,5.479,30.881,2018
+Ligue 1 (France),Post-VAR,2717,0.1629,4.007,24.896,2018
+Ligue 1 (France),Pre-VAR,4176,0.1263,3.664,29.605,2018
+Premier League (England),Post-VAR,2660,0.1737,3.714,21.54,2019
+Premier League (England),Pre-VAR,5320,0.1503,3.378,22.607,2019
+Serie A (Italy),Post-VAR,3420,0.1794,4.571,25.805,2017
+Serie A (Italy),Pre-VAR,4544,0.1493,4.796,33.082,2017
