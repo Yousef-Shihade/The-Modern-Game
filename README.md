@@ -225,4 +225,4 @@ Python layer handles data preparation and the exploration charts above.
 
 Yousef Shihade · Shada Essawi · Fidaa Arrabi
 
-Data Visualization — Final Project, תשפ״ו
+Data Visualization — Final Project
