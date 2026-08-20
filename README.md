@@ -196,9 +196,9 @@ the attacking or VAR findings.
 ### Live on Tableau Public
 
 - **Dashboard 1 — 30 Years of Change: Goals & Draws:**
-  https://public.tableau.com/views/Dashboard1-30YearsofChangeGoalsandDraws/DashB1-TheAttackingEvolution
+  https://public.tableau.com/shared/6ND3XPRXR
 - **Dashboard 2 — Before vs. After VAR: Refereeing Patterns:**
-  https://public.tableau.com/views/Dashboard2-Beforevs_AfterRefereeingPatterns/Dashboard3
+  https://public.tableau.com/views/DashBoard2-Beforevs_AfterRefereeingPatters/DashBoard2-Beforevs_AfterRefereeingPatters
 - **Story — How 30 Years Changed Football:**
   https://public.tableau.com/views/Story-How30YearsChangedFootball/Story1
 
@@ -208,9 +208,10 @@ the attacking or VAR findings.
 |---|---|
 | `football_preprocessing.py` | Preprocessing pipeline and data-exploration charts — documented and reproducible |
 | `plots/` | Data-exploration charts rendered by the script |
+| `How 30 Years Changed Football - full project.twbx` | Packaged Tableau workbook — both dashboards and the story |
 | `README.md` | This file |
 
-The packaged Tableau workbook and the final written report are added on completion.
+The final written report is added on completion.
 
 ## Tools
 
