@@ -200,7 +200,7 @@ the attacking or VAR findings.
 - **Dashboard 2 — Before vs. After VAR: Refereeing Patterns:**
   https://public.tableau.com/views/DashBoard2-Beforevs_AfterRefereeingPatterns/DashBoard2-Beforevs_AfterRefereeingPatterns
 - **Story — How 30 Years Changed Football:**
-  https://public.tableau.com/shared/MMRGWTJDD
+  https://public.tableau.com/app/profile/fidaa.arrabi/viz/Story1-How30YearsChangedFootball/Story1-How30YearsChangedFootball
 
 ## Repository contents
 
