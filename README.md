@@ -196,11 +196,11 @@ the attacking or VAR findings.
 ### Live on Tableau Public
 
 - **Dashboard 1 — 30 Years of Change: Goals & Draws:**
-  https://public.tableau.com/shared/6ND3XPRXR
+  https://public.tableau.com/views/Dashboard1-30YearsofChangeGoalsandDraws/Dashboard1-30YearsofChangeGoalsandDraws
 - **Dashboard 2 — Before vs. After VAR: Refereeing Patterns:**
-  https://public.tableau.com/views/DashBoard2-Beforevs_AfterRefereeingPatters/DashBoard2-Beforevs_AfterRefereeingPatters
+  https://public.tableau.com/views/DashBoard2-Beforevs_AfterRefereeingPatterns/DashBoard2-Beforevs_AfterRefereeingPatterns
 - **Story — How 30 Years Changed Football:**
-  https://public.tableau.com/views/Story-How30YearsChangedFootball/Story1
+  https://public.tableau.com/shared/MMRGWTJDD
 
 ## Repository contents
 
